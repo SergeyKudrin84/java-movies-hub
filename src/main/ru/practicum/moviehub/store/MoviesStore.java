@@ -1,6 +1,5 @@
 package ru.practicum.moviehub.store;
 
-import ru.practicum.moviehub.http.MoviesServer;
 import ru.practicum.moviehub.model.Movie;
 
 import java.util.ArrayList;
