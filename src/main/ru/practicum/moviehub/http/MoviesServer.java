@@ -1,7 +1,6 @@
 package ru.practicum.moviehub.http;
 
 import com.sun.net.httpserver.HttpServer;
-import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
 import java.io.IOException;
