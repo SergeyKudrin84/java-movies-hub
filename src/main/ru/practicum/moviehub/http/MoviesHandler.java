@@ -20,6 +20,13 @@ import java.util.Map;
 
 class MoviesHandler extends BaseHttpHandler {
     private MoviesStore moviesStore;
+    private final int OK_200 = 200;
+    private final int CREATED_201 = 201;
+    private final int NO_CONTENT_204 = 204;
+    private final int BAD_REQUEST_400 = 400;
+    private final int NOT_FOUND_404 = 404;
+    private final int UNSUPPORTED_MEDIA_TYPE_415 = 415;
+    private final int UNPROCESSABLE_ENTITY_422 = 422;
 
     public MoviesHandler(MoviesStore moviesStore) {
         this.moviesStore = moviesStore;
@@ -38,14 +45,14 @@ class MoviesHandler extends BaseHttpHandler {
                         id = Integer.parseInt(pathURI[2]);
                         findMovieByID(exchange, id);
                     } catch (IllegalArgumentException e) {
-                        sendError(exchange, 400, new ErrorResponse("Некорректный ID"));
+                        sendError(exchange, BAD_REQUEST_400, new ErrorResponse("Некорректный ID"));
                     }
                 } else if (query == null) {
                     if (moviesStore.getSize() == 0) {
-                        sendNoContent(exchange, 204);
+                        sendJson(exchange, OK_200, "[]");
                     } else {
                         sendJson(exchange,
-                                200,
+                                OK_200,
                                 new GsonBuilder().setPrettyPrinting().create().toJson(moviesStore.getListOfValue())
                         );
                     }
@@ -61,7 +68,7 @@ class MoviesHandler extends BaseHttpHandler {
                         year = Integer.parseInt(yearParam);
                         filterMovieByYear(exchange, year);
                     } catch (IllegalArgumentException e) {
-                        sendError(exchange, 400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
+                        sendError(exchange, BAD_REQUEST_400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
                     }
                 }
                 return;
@@ -75,7 +82,7 @@ class MoviesHandler extends BaseHttpHandler {
                         id = Integer.parseInt(pathURI[2]);
                         deleteMovieByID(exchange, id);
                     } catch (IllegalArgumentException e) {
-                        sendError(exchange, 400, new ErrorResponse("Некорректный ID"));
+                        sendError(exchange, BAD_REQUEST_400, new ErrorResponse("Некорректный ID"));
                     }
                 } else {
                     sendNoContent(exchange, 405);
@@ -88,9 +95,9 @@ class MoviesHandler extends BaseHttpHandler {
 
     protected void deleteMovieByID(HttpExchange exchange, int id) throws IOException {
         if (moviesStore.deleteMovieByID(id)) {
-            sendNoContent(exchange, 204);
+            sendNoContent(exchange, NO_CONTENT_204);
         } else {
-            sendNoContent(exchange, 404);
+            sendNoContent(exchange, NOT_FOUND_404);
         }
     }
 
@@ -102,18 +109,18 @@ class MoviesHandler extends BaseHttpHandler {
                     new String(inputStream.readAllBytes(), UTF8)).getAsJsonObject();
             String title = json.get("title").getAsString();
             Integer year = json.get("year").getAsInt();
-            int statusCode = 201;
+            int statusCode = CREATED_201;
             List<String> details = new ArrayList<>();
             if (title.isEmpty() || title.length() >= 100) {
-                statusCode = 422;
+                statusCode = UNPROCESSABLE_ENTITY_422;
                 details.add("название не должно быть пустым или превышать 100 символов");
             }
             int nowYear = LocalDate.now().getYear();
             if (!isCorrectYear(year)) {
-                statusCode = 422;
+                statusCode = UNPROCESSABLE_ENTITY_422;
                 details.add("год должен быть между 1888 и " + nowYear);
             }
-            if (statusCode == 422) {
+            if (statusCode == UNPROCESSABLE_ENTITY_422) {
                 sendError(exchange, statusCode, new ErrorResponse("Ошибка валидации", details));
                 return;
             }
@@ -122,27 +129,27 @@ class MoviesHandler extends BaseHttpHandler {
             Map<String, Object> jsonMap = new HashMap<>();
             jsonMap.put("id", id);
             jsonMap.put("movie", movie);
-            sendJson(exchange, 201, new Gson().toJson(jsonMap));
+            sendJson(exchange, CREATED_201, new Gson().toJson(jsonMap));
         } else {
-            sendError(exchange, 415, new ErrorResponse());
+            sendError(exchange, UNSUPPORTED_MEDIA_TYPE_415, new ErrorResponse());
         }
     }
 
     protected void findMovieByID(HttpExchange exchange, int id) throws IOException {
         Movie movie = moviesStore.getMovieByID(id);
         if (movie == null) {
-            sendError(exchange, 404, new ErrorResponse("Фильм не найден"));
+            sendError(exchange, NOT_FOUND_404, new ErrorResponse("Фильм не найден"));
         } else {
-            sendJson(exchange, 200, new Gson().toJson(movie));
+            sendJson(exchange, OK_200, new Gson().toJson(movie));
         }
     }
 
     protected void filterMovieByYear(HttpExchange exchange, int year) throws IOException {
         if (isCorrectYear(year)) {
             List<Movie> movieList = moviesStore.getMoviesByYear(year);
-            sendJson(exchange, 200, new Gson().toJson(movieList));
+            sendJson(exchange, OK_200, new Gson().toJson(movieList));
         } else {
-            sendError(exchange, 400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
+            sendError(exchange, BAD_REQUEST_400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
         }
 
     }

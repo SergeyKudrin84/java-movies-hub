@@ -53,7 +53,7 @@ public class MoviesApiTest {
     }
 
     @Test
-    void getMovies_whenEmpty_returns204() throws Exception {
+    void getMovies_whenEmpty_returns200() throws Exception {
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -63,9 +63,9 @@ public class MoviesApiTest {
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(charset));
 
         assertEquals(
-                204,
+                200,
                 resp.statusCode(),
-                "GET /movies должен вернуть 204"
+                "GET /movies должен вернуть 200"
         );
 
         String contentTypeHeaderValue =
@@ -75,6 +75,12 @@ public class MoviesApiTest {
                 "application/json; charset=UTF-8",
                 contentTypeHeaderValue,
                 "Content-Type должен содержать формат данных и кодировку"
+        );
+
+        String body = resp.body().trim();
+        assertTrue(
+                body.startsWith("[") && body.endsWith("]"),
+                "Ожидается JSON-массив"
         );
     }
 
