@@ -20,13 +20,13 @@ import java.util.Map;
 
 class MoviesHandler extends BaseHttpHandler {
     private MoviesStore moviesStore;
-    private final int OK200 = 200;
-    private final int CREATED201 = 201;
-    private final int NOCONTENT204 = 204;
-    private final int BADREQUEST400 = 400;
-    private final int NOTFOUND404 = 404;
-    private final int UNSUPPORTEDMEDIATYPE415 = 415;
-    private final int UNPROCESSABLEENTITY422 = 422;
+    private final int ok200 = 200;
+    private final int created201 = 201;
+    private final int noContent204 = 204;
+    private final int badRequest400 = 400;
+    private final int notFound404 = 404;
+    private final int unsupportedMediaType415 = 415;
+    private final int unprocessableEntity422 = 422;
 
     public MoviesHandler(MoviesStore moviesStore) {
         this.moviesStore = moviesStore;
@@ -45,14 +45,14 @@ class MoviesHandler extends BaseHttpHandler {
                         id = Integer.parseInt(pathURI[2]);
                         findMovieByID(exchange, id);
                     } catch (IllegalArgumentException e) {
-                        sendError(exchange, BADREQUEST400, new ErrorResponse("Некорректный ID"));
+                        sendError(exchange, badRequest400, new ErrorResponse("Некорректный ID"));
                     }
                 } else if (query == null) {
                     if (moviesStore.getSize() == 0) {
-                        sendJson(exchange, OK200, "[]");
+                        sendJson(exchange, ok200, "[]");
                     } else {
                         sendJson(exchange,
-                                OK200,
+                                ok200,
                                 new GsonBuilder().setPrettyPrinting().create().toJson(moviesStore.getListOfValue())
                         );
                     }
@@ -68,7 +68,7 @@ class MoviesHandler extends BaseHttpHandler {
                         year = Integer.parseInt(yearParam);
                         filterMovieByYear(exchange, year);
                     } catch (IllegalArgumentException e) {
-                        sendError(exchange, BADREQUEST400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
+                        sendError(exchange, badRequest400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
                     }
                 }
                 return;
@@ -82,7 +82,7 @@ class MoviesHandler extends BaseHttpHandler {
                         id = Integer.parseInt(pathURI[2]);
                         deleteMovieByID(exchange, id);
                     } catch (IllegalArgumentException e) {
-                        sendError(exchange, BADREQUEST400, new ErrorResponse("Некорректный ID"));
+                        sendError(exchange, badRequest400, new ErrorResponse("Некорректный ID"));
                     }
                 } else {
                     sendNoContent(exchange, 405);
@@ -95,9 +95,9 @@ class MoviesHandler extends BaseHttpHandler {
 
     protected void deleteMovieByID(HttpExchange exchange, int id) throws IOException {
         if (moviesStore.deleteMovieByID(id)) {
-            sendNoContent(exchange, NOCONTENT204);
+            sendNoContent(exchange, noContent204);
         } else {
-            sendNoContent(exchange, NOTFOUND404);
+            sendNoContent(exchange, notFound404);
         }
     }
 
@@ -109,18 +109,18 @@ class MoviesHandler extends BaseHttpHandler {
                     new String(inputStream.readAllBytes(), UTF8)).getAsJsonObject();
             String title = json.get("title").getAsString();
             Integer year = json.get("year").getAsInt();
-            int statusCode = CREATED201;
+            int statusCode = created201;
             List<String> details = new ArrayList<>();
             if (title.isEmpty() || title.length() >= 100) {
-                statusCode = UNPROCESSABLEENTITY422;
+                statusCode = unprocessableEntity422;
                 details.add("название не должно быть пустым или превышать 100 символов");
             }
             int nowYear = LocalDate.now().getYear();
             if (!isCorrectYear(year)) {
-                statusCode = UNPROCESSABLEENTITY422;
+                statusCode = unprocessableEntity422;
                 details.add("год должен быть между 1888 и " + nowYear);
             }
-            if (statusCode == UNPROCESSABLEENTITY422) {
+            if (statusCode == unprocessableEntity422) {
                 sendError(exchange, statusCode, new ErrorResponse("Ошибка валидации", details));
                 return;
             }
@@ -129,27 +129,27 @@ class MoviesHandler extends BaseHttpHandler {
             Map<String, Object> jsonMap = new HashMap<>();
             jsonMap.put("id", id);
             jsonMap.put("movie", movie);
-            sendJson(exchange, CREATED201, new Gson().toJson(jsonMap));
+            sendJson(exchange, created201, new Gson().toJson(jsonMap));
         } else {
-            sendError(exchange, UNSUPPORTEDMEDIATYPE415, new ErrorResponse());
+            sendError(exchange, unsupportedMediaType415, new ErrorResponse());
         }
     }
 
     protected void findMovieByID(HttpExchange exchange, int id) throws IOException {
         Movie movie = moviesStore.getMovieByID(id);
         if (movie == null) {
-            sendError(exchange, NOTFOUND404, new ErrorResponse("Фильм не найден"));
+            sendError(exchange, notFound404, new ErrorResponse("Фильм не найден"));
         } else {
-            sendJson(exchange, OK200, new Gson().toJson(movie));
+            sendJson(exchange, ok200, new Gson().toJson(movie));
         }
     }
 
     protected void filterMovieByYear(HttpExchange exchange, int year) throws IOException {
         if (isCorrectYear(year)) {
             List<Movie> movieList = moviesStore.getMoviesByYear(year);
-            sendJson(exchange, OK200, new Gson().toJson(movieList));
+            sendJson(exchange, ok200, new Gson().toJson(movieList));
         } else {
-            sendError(exchange, BADREQUEST400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
+            sendError(exchange, badRequest400, new ErrorResponse("Некорректный параметр запроса — 'year'"));
         }
 
     }
